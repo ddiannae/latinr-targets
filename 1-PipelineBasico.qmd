@@ -1,0 +1,228 @@
+---
+title: "1 - Un pipeline básico con `targets`"
+format:
+    html:
+        embed-resources: true
+        self-contained: true
+        toc: true
+        toc-location: left
+        toc-title: "Contenido"
+---
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+library(targets)
+```
+
+## Workflow básico de `targets`
+
+Un workflow que hace uso de `targets` incluye un archivo principal llamado `_targets.R`.
+
+Este archivo contiene la definición del pipeline de análisis de datos, que consiste en una serie de "targets" u objetivos. Cada target representa un paso en el análisis y cada uno de estos pasos está asociado con una función.
+
+### Nuestro primer archivo `_targets.R`
+
+El paquete `targets` proporciona una función llamada `tar_script()` que crea un archivo `_targets.R` que funciona como plantilla.
+
+```{r}
+#| eval: false
+library(targets)
+tar_script()
+```
+
+Este es el contenido del archivo `_targets.R` generado automáticamente:
+```{r}
+#| eval: false
+library(targets)
+# This is an example _targets.R file. Every
+# {targets} pipeline needs one.
+# Use tar_script() to create _targets.R and tar_edit()
+# to open it again for editing.
+# Then, run tar_make() to run the pipeline
+# and tar_read(data_summary) to view the results.
+
+# Define custom functions and other global objects.
+# This is where you write source(\"R/functions.R\")
+# if you keep your functions in external scripts.
+summarize_data <- function(dataset) {
+  colMeans(dataset)
+}
+
+# Set target-specific options such as packages:
+# tar_option_set(packages = "utils") # nolint
+
+# End this file with a list of target objects.
+list(
+  tar_target(data, data.frame(x = sample.int(100), y = sample.int(100))),
+  tar_target(data_summary, summarize_data(data)) # Call your custom functions.
+)
+
+```
+
+El archivo carga la librería y contiene una función llamada `summarize_data` que obtiene el promedio de cada columna en la variable `dataset`.
+
+Al final define una lista de targets con la función `tar_target()`. En este caso, tenemos dos:
+
+1. `data`: crea un data frame con dos columnas `x` y `y`, cada una con una permutación aleatoria de números enteros del 1 al 100.
+2. `data_summary`: utiliza la función `summarize_data` para calcular el promedio de las columnas del data frame `data`.
+
+### Modificando el archivo `_targets.R`
+
+Vamos a utilizar el dataset [**Allrecipes**](https://github.com/rfordatascience/tidytuesday/blob/main/data/2025/2025-09-16/readme.md){target="_blank"}, que contiene información sobre recetas de cocina y fue el dataset de TidyTuesday de la semana 37 del 2025.
+
+Realizaremos un análisis sencillo para obtener la cantidad de recetas por tipo de cocina, el tiempo de preparación y cocción promedio y el puntaje promedio en su calificación.
+
+Siguiendo la documentación de  github, podemos leer el dataset `cuisines.csv` directamente desde la URL del archivo CSV.
+
+Nuestra limpieza de datos incluirá eliminar valores faltantes y la selección de columnas relevantes. Añadimos la lectura y limpieza de datos a nuestro archivo `_targets.R` de la siguientes manera:
+
+```{r}
+#| eval: false
+library(targets)
+library(readr)
+library(dplyr)
+
+limpiar_datos <- function(data) {
+  data |>
+    filter(
+      !is.na(total_ratings) &
+        !is.na(avg_rating) &
+        !is.na(total_time) &
+    ) |>
+    select(name, country, total_time, avg_rating, total_ratings)
+}
+
+list(
+  tar_target(
+    recetas_raw,
+    read_csv(
+      "https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2025/2025-09-16/cuisines.csv"
+    )
+  ),
+  tar_target(recetas, limpiar_datos(recetas_raw))
+)
+```
+
+En esta primera versión de nuestro archivo `_targets.R`, hemos cargado todos los paquetes necesarios y definido una función `limpiar_datos()` para limpiar el dataset. Luego, hemos creado dos targets:
+
+1. `recetas_raw`: el dataframe que resulta de utilizar `read_csv` del paquete `readr`.
+2. `recetas`: el dataframe que resulta de aplicar la función `limpiar_datos()` al target anterior.
+
+### Ejecutando el pipeline
+
+Con el archivo `_targets.R` modificado, ejecutamos el pipeline con  la función  `tar_make()`. Esta función procesa todos los targets definidos en el archivo, respetando sus dependencias.
+
+La salida de la ejecución se muestra en la consola e indica qué targets se están construyendo y cuáles ya están actualizados. Es similar a la siguiente:
+
+```
++ recetas_raw dispatched
+✔ recetas_raw completed [183ms, 280.57 kB]
++ recetas dispatched
+✔ recetas completed [6ms, 35.00 kB]
+✔ ended pipeline [311ms, 2 completed, 0 skipped]
+```
+
+
+::: {.callout-tip collapse="true"}
+## Intenta ejecutar el pipeline nuevamente. ¿Qué observas en la salida?
+
+```
+✔ ended pipeline [51ms,  2 skipped]
+```
+
+`targets`  detecta que no ha habido cambios en los targets y los marca como "skipped" (saltados), ya que no es necesario reconstruirlos.
+Así podemos asegurarnos de solo ejecutar los pasos que han cambiado, optimizando el tiempo de ejecución.
+:::
+
+
+
+### Accediendo a los resultados
+
+Ahora, ¿dónde están los objetos `recetas_raw` y `recetas` que hemos creado?
+
+Después de ejecutar el pipeline, puedes notar que se ha creado
+una carpeta llamada `_targets/` en tu directorio de trabajo. Esta carpeta contiene todos los datos y resultados generados por el pipeline.
+
+Para acceder a los objetos generados tenemos dos funciones principales:
+
+- `tar_read()`: lee un target específico desde el almacenamiento de `targets`.
+- `tar_load()`: carga un target específico en el entorno global de R.
+
+Por ejemplo, para leer el objeto `recetas_raw` y ver sus primeras filas, podemos usar:
+
+```{r}
+tar_read(recetas_raw)
+```
+
+Y para cargar el objeto `recetas` en nuestro entorno global, usamos:
+
+```{r}
+tar_load(recetas)
+head(recetas)
+```
+
+### Analizando nuestro pipeline
+
+
+Para visualizar el flujo de nuestro pipeline y las dependencias entre los targets, el paquete cuenta con la función `tar_visnetwork()`, que genera un gráfico interactivo indicando el status de cada target.
+
+```{r}
+#| message: false
+#| warning: false
+tar_visnetwork()
+```
+
+Actualicemos nuestra función `limpiar_datos()` para incluir un filtro adicional que elimine recetas con tiempos totales mayores a 300 minutos (5 horas) y menores a 5 minutos. Esto facilitará el análisis posterior.
+
+```{r}
+#| eval: false
+limpiar_datos <- function(data) {
+  data |>
+    filter(
+      !is.na(total_ratings) &
+        !is.na(avg_rating) &
+        !is.na(total_time) &
+        total_time > 5 &
+        total_time < 300
+    ) |>
+    select(name, country, total_time, avg_rating, total_ratings)
+}
+```
+
+::: {.callout-tip collapse="true"}
+## Antes de ejecutar el pipeline nuevamente, visualiza el gráfico de dependencias
+
+ ¿Qué cambios observas? ¿Puedes predecir qué targets se volverán a ejecutar?
+
+[![Gráfico de dependencias](images/visnetwork1.png)](images/visnetwork1.png)
+
+Al correr `tar_make()`  de nuevo, verás que solo el target `recetas` se vuelve a ejecutar, ya que modificamos la función que afecta a ese target.
+::::
+
+Existen varias funciones que nos permiten tener un control más detallado sobre la ejecución del pipeline.
+
+Por ejemplo, podemos forzar la reconstrucción de un target específico con `tar_invalidate()` o  o ejecutar solo un target y sus dependencias
+con `tar_make(names = "target_name")`
+
+```{r}
+#| message: false
+#| warning: false
+tar_invalidate(names = "recetas")
+tar_make(recetas)
+```
+
+
+Con `tar_outdated()` identificamos targets desactualizados, mientras que `tar_destroy()` elimina todos los datos generados por el pipeline.
+
+
+Puedes consultar esta y otras funciones en la documentación oficial de [`targets`](https://docs.ropensci.org/targets/index.html){target="_blank"}
+
+## Resumen
+
+- Hemos creado un pipeline básico utilizando el paquete `targets`.
+- Definimos targets para leer y limpiar un dataset de recetas.
+- Ejecutamos el pipeline y accedimos a los resultados generados.
+- Visualizamos y analizamos el flujo del pipeline y sus dependencias.
+- El archivo `_targets.R` que hemos generado en esta notebook lo encuentras como:  `_targets1.R`
