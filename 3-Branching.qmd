@@ -1,0 +1,150 @@
+---
+title: "3 - Branching en el pipeline"
+format:
+    html:
+        embed-resources: true
+        self-contained: true
+        toc: true
+        toc-location: left
+        toc-title: "Contenido"
+        toc-expand: 3
+---
+
+
+En `targets`, el branching nos permite crear múltiples ramas de procesamiento a partir de un solo target.
+Es útil cuando queremos aplicar el mismo análisis a diferentes datos en la entrada.
+
+Targets tiene dos tipos de branching:
+
+- **Branching estático**: Se define explícitamente al inicio del pipeline.
+- **Branching dinámico**: Se genera automáticamente en función de los datos.
+
+
+## Branching dinámico
+
+En nuestro ejemplo haremos uso del **branching dinámico** para seleccionar un conjunto de recetas
+agrupadas por países. Vamos a tomar las recetas con mejores evaluaciones y menos cantidad de calorías en países de Latinoamérica.
+
+
+### Limpieza de datos
+
+Nuestra función para limpiar datos es similar a la que hemos utilizado antes, pero ahora también filtramos las recetas con al menos 5 evaluaciones y seleccionamos la columna de calorías, asegurándonos que no tenemos valores con `NA`.
+
+```{r}
+limpiar_datos <- function(data) {
+  data |>
+    filter(
+      !is.na(total_ratings) &
+        !is.na(avg_rating) &
+        !is.na(total_time) &
+        !is.na(calories) &
+        total_ratings >= 5
+    ) |>
+    select(name, country, total_time, avg_rating, total_ratings, calories)
+}
+```
+
+
+### Procesamiento de datos
+
+Después de limpiar los datos, queremos encontrar las recetas con mejor eficiencia calórica en países de Latinoamérica. Para esto, definimos una función que divide la evaluación promedio entre las calorías asociadas y filtra aquellas con eficiencia menor a 1.
+
+```{r}
+#| eval: false
+calcular_eficiencia <- function(data) {
+  data |>
+    mutate(
+      eficiencia_cal = avg_rating / calories
+    ) |>
+    filter(eficiencia_cal < 1)
+}
+```
+
+Y una función que filtra la comida asociada a países de Latinoamérica.
+
+```{r}
+#| eval: false
+filtrar_latam <- function(data) {
+  latam_countries <- c(
+    "Cuban",
+    "Brazilian",
+    "Puerto Rican",
+    "Peruvian",
+    "Argentinian",
+    "Chilean",
+    "Colombian",
+    "Tex-Mex"
+  )
+  data |>
+    filter(country %in% latam_countries)
+}
+```
+
+
+### Funciones para branching
+
+Después de definir las funciones necesarias, y agregar los targets de limpieza y procesamiento a nuestro pipeline, podemos implementar el branching dinámico, añadiendo las siguientes funciones a nuestro `tar_plan()`.
+
+Primero agrupamos los datos por país utilizando `tar_group_by()` y
+luego utilizamos `tar_target()` con `map()` para aplicar la misma función a cada grupo de datos.
+
+En este caso, la función que aplicaremos es `slice_max()` para obtener el top 3 de recetas con mejor eficiencia calórica.
+
+```{r}
+#| eval: false
+tar_plan(
+  ...,
+  tar_group_by(
+    recetas_grouped,
+    recetas_latam,
+    country
+  ),
+  tar_target(
+    recetas_top,
+    slice_max(recetas_grouped, eficiencia_cal, n = 3),
+    pattern = map(recetas_grouped)
+  ),
+  ...
+)
+
+```
+
+::: {.callout-tip}
+## ¿Cómo obtendrías los mismos resultados con `dplyr`?
+::::
+
+La ramificación con `targets` funciona correctamente cuando trabajamos con `dataframes`. Por lo tanto, es recomendable
+utilizar funciones de `dplyr` para manipular los datos antes y después del branching.
+
+
+### Reporte y visualización del pipeline
+
+Finalmente, podemos cargar los datos resultantes y visualizarlos en un gráfico dentro de un reporte de Quarto.
+En este caso, el target `recetas_top` contiene el dataframe que usaremos en el reporte.
+
+Este es el último elemento en nuestro `tar_plan()`:
+
+```{r}
+#| eval: false
+tar_plan(
+  ...,
+  tar_quarto(
+    reporte_eficiencia,
+    path = "reportes/reporte_eficiencia.qmd"
+  )
+)
+```
+
+Corre el pipeline y luego abre el reporte `reportes/reporte_eficiencia.html` para ver los resultados.
+¿Qué tipo de recetas encuentras en el top?
+
+Observa el gráfico de dependencias para entender cómo se relacionan los targets en el pipeline con branching. Abre también la carpeta `_targets/objects` para ver cómo se almacenan los datos ramificados.
+
+¿Qué otras operaciones se te ocurre que puedes hacer con branching en `targets`?
+
+## Resumen
+- El branching en `targets` permite crear múltiples ramas de procesamiento a partir de un solo target y es útil para aplicar el mismo análisis a diferentes datos en la entrada.
+- El branching dinámico se genera automáticamente en función de los datos y es eficiente cuando trabajamos con dataframes.
+- Utilizamos `tar_group_by()` y `tar_target()` con `map()` para aplicar funciones a grupos de datos.
+- El archivo `_targets.R` que hemos generado en esta notebook lo encuentras como:  `_targets3.R`.
+- Para aprender sobre branching estático, revisa la documentación oficial de `targets`: [Static branching](https://books.ropensci.org/targets/static.html){target="_blank"}.

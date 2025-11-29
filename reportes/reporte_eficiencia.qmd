@@ -1,0 +1,53 @@
+---
+title: "Recetas Latinoamericanas con mayor eficiencia"
+format:
+    html:
+        self-contained: true
+        df-print: kable
+---
+
+
+```{r}
+#| label: load
+#| echo: false
+targets::tar_load(
+  recetas_top
+)
+```
+
+
+```{r}
+#| message: false
+#| warning: false
+library(ggplot2)
+library(ggrepel)
+library(dplyr)
+```
+
+
+Top 3 de recetas latinoamericanas con mayor eficiencia calórica (calorías por evaluación) por país:
+
+```{r}
+recetas_top |>
+  ggplot(aes(x = total_time, y = eficiencia_cal)) +
+  geom_text_repel(
+    data = recetas_top |>
+      filter(eficiencia_cal >= 0.2 & total_time < 60),
+    aes(label = name),
+    hjust = 0,
+    vjust = 1,
+    size = 3,
+    show.legend = FALSE,
+    max.overlaps = Inf
+  ) +
+  geom_point(aes(color = country, size = total_ratings), alpha = 0.5) +
+  labs(
+    title = "Eficiencia calórica en recetas latinoamericanas",
+    x = "Tiempo total (minutos)",
+    y = "Eficiencia (calorías / rating)",
+    color = "País",
+    size = "Número de evaluaciones"
+  ) +
+  theme_minimal() +
+  scale_size_continuous()
+```
