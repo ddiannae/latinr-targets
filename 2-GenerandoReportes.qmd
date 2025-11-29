@@ -1,0 +1,197 @@
+---
+title: "2 - Reportes con targets"
+format:
+    html:
+        embed-resources: true
+        self-contained: true
+        toc: true
+        toc-location: left
+        toc-title: "Contenido"
+---
+
+
+## Usando funciones de `tarchetypes`
+
+En nuestro primer pipeline incluimos el código para obtener y limpiar los datos. Ahora obtendremos el total de recetas por país, el promedio de tiempo de preparación, la evaluación promedio y el total de evaluaciones por país. Finalmente, utilizaremos la salida de nuestro pipeline en un reporte de Quarto.
+
+Los creadores de `targets` también desarrollaron un paquete complementario llamado `tarchetypes` con funciones útiles para facilitar ciertas tareas comunes en los flujos de datos.
+
+Una de estas funciones es `tar_plan()`, con la que podemos definir los targets de forma más compacta, similar a como lo haríamos en un script tradicional de R.
+
+Nuestro nuevo archivo `_targets.R` con `tar_plan()` se vería así:
+```{r}
+#| eval: false
+library(targets)
+library(tarchetypes)
+library(readr)
+library(dplyr)
+
+limpiar_datos <- function(data) {
+  data |>
+    filter(
+      !is.na(total_ratings) &
+        !is.na(avg_rating) &
+        !is.na(total_time) &
+        total_time > 5 &
+        total_time < 300
+    ) |>
+    select(name, country, total_time, avg_rating, total_ratings)
+}
+
+resumir_datos <- function(data) {
+  data |>
+    group_by(country) |>
+    summarise(
+      recetas = n(),
+      tiempo_promedio = mean(total_time, na.rm = T),
+      evaluacion_promedio = mean(avg_rating, na.rm = T),
+      numero_evaluaciones = sum(total_ratings)
+    )
+}
+
+tar_plan(
+  recetas_raw = read_csv(
+    "https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2025/2025-09-16/cuisines.csv"
+  ),
+  recetas = limpiar_datos(recetas_raw),
+  recetas_resumen = resumir_datos(recetas)
+)
+```
+
+Ejecuta el pipeline y lee el objeto `recetas_resumen` para verificar que todo esté correcto.
+
+## Trabajando con archivos de entrada
+
+¿Qué pasa cuándo los datos no se encuentran en la web, sino en archivos locales?
+
+En un proyecto de `targets`, el lugar adecuado para almacenar datos es en la carpeta `_targets/user/data/`.
+Si esta no existe, puedes crearla manualmente. Descarga el archivo de datos y guárdalo en esa ubicación con el nombre `recetas.csv`.
+
+Modificaremos nuestro `tar_plan()` para leer los datos desde ese archivo local, usando nuevamente la función `read_csv()` de `readr`:
+
+
+```{r}
+#| eval: false
+tar_plan(
+  recetas_raw = read_csv(
+    "_targets/user/data/recetas.csv"
+  ),
+  recetas = limpiar_datos(recetas_raw),
+  recetas_resumen = resumir_datos(recetas)
+)
+```
+
+Corre el pipeline nuevamente.
+
+Si por alguna razón cambia el contenido del archivo de datos, ¿crees que `targets` detectará el cambio y volverá a ejecutar el pipeline correctamente?
+
+::: {.callout-tip collapse="true"}
+## Pruébalo tú mismo
+
+Puedes intentarlo eliminando filas en el archivo `recetas.csv`, solo asegúrate de guardar una copia de respaldo antes.
+:::
+
+Una vez que el target `recetas_raw` es creado, `targets` no es capaz de detectar ningún cambio en el archivo original,
+ya que lo que se monitorea es el objeto en memoria.
+
+Para incluir el archivo como una dependencia en nuestro flujo de datos, podemos usar la función `tar_file_read()`. Esta función es parte de un grupo
+de funciones en `tarchetypes` llamadas fábricas de targets.
+
+En particular, `tar_file_read()` genera un target para el archivo y otro target para leer su contenido, asegurando que `targets` monitoree cualquier cambio en el archivo.
+
+```{r}
+#| eval: false
+tar_plan(
+  tar_file_read(
+    recetas_raw,
+    "_targets/user/data/recetas.csv",
+    read_csv(!!.x)
+  ),
+  recetas = limpiar_datos(recetas_raw),
+  recetas_resumen = resumir_datos(recetas)
+)
+```
+
+Ahora, si haces cambios en el archivo `recetas.csv`, `targets` detectará el cambio y volverá a ejecutar el pipeline correctamente.
+¡Inténtalo!
+
+## Generando archivos de salida
+
+Imaginemos que queremos guardar el resumen de recetas por país en un archivo CSV para compartirlo con nuestro equipo de trabajo.
+
+Podemos usar la función `tar_file()` de `tarchetypes` para crear un target que genere este archivo de salida. Sin embargo, para que `targets` pueda monitorear el archivo correctamente, necesitamos escribir una función que regrese el nombre del archivo generado, cosa que `write_csv` no hace por default.
+
+```{r}
+#| eval: false
+guardar_archivo <- function(data, archivo) {
+  write_csv(data, archivo)
+  return(archivo)
+}
+
+tar_plan(
+  tar_file_read(
+    recetas_raw,
+    "_targets/user/data/recetas.csv",
+    read_csv(!!.x)
+  ),
+  recetas = limpiar_datos(recetas_raw),
+  recetas_resumen = resumir_datos(recetas),
+  tar_file(
+    archivo_recetas_resumen,
+    guardar_archivo(
+      recetas_resumen,
+      archivo = "_targets/user/data/recetas_resumen.csv"
+    )
+  )
+)
+```
+
+
+Corre el pipeline nuevamente y verifica que el archivo `recetas_resumen.csv` se haya creado en la carpeta `_targets/user/data/`. En este caso guardamos el archivo en `data/` pero podríamos guardarlo en otra ubicación.
+
+
+::: {.callout-tip collapse="true"}
+## ¿Cómo se ve el gráfico de dependencias ahora?
+
+[![Gráfico de dependencias](images/visnetwork2.png)](images/visnetwork2.png)
+
+::::
+
+## Generando reportes con Quarto
+
+Una vez que tenemos los resultados de nuestro análisis, podemos crear reportes dinámicos utilizando Quarto. En ellos podemos incluir gráficos y tablas para compartir nuestros resultados.
+
+La ventaja de este enfoque es que separamos la capa del análisis y la capa de presentación, lo que facilita la actualización y mantenimiento de ambos componentes.
+
+Para este ejemplo, tenemos un reporte llamado `reporte_recetas.qmd` en la carpeta `reportes` que utiliza los resultados generados por nuestro pipeline de `targets`.
+
+Añadimos el reporte a nuestro archivo `_targets.R` utilizando la función `tar_quarto()` de `tarchetypes`.
+```{r}
+#| eval: false
+tar_quarto(
+  reporte_recetas,
+  path = "reportes/reporte_recetas.qmd"
+)
+```
+
+Y del lado del archivo `.qmd`, necesitamos especificar que cargaremos el target `recetas_resumen` para utilizar sus datos.
+
+Esto lo hacemos añadiendo una celda de código al inicio del reporte:
+
+```{r}
+#| eval: false
+targets::tar_load(
+  recetas_resumen
+)
+```
+
+Ahora, al ejecutar el pipeline, `targets` generará automáticamente el reporte utilizando los datos más recientes.
+
+Realiza algunas modificaciones al reporte y corre nuevamente el pipeline. ¿El reporte se actualiza correctamente con los nuevos cambios?
+
+## Resumen
+
+- Utilizamos `tarchetypes` para simplificar la definición de targets en nuestro pipeline.
+- Definimos targets para el análisis de datos, lectura y escritura de archivos, y generación de reportes.
+- Integramos Quarto con `targets` para crear reportes dinámicos basados en los resultados del análisis.
+- El archivo `_targets.R` que hemos generado en esta notebook lo encuentras como:  `_targets2.R`

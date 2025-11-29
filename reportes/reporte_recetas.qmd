@@ -1,0 +1,95 @@
+---
+title: "Resumen de Recetas por País o tipo de cocina"
+format:
+    html:
+        self-contained: true
+        df-print: kable
+---
+
+```{r}
+#| label: load
+#| echo: false
+targets::tar_load(
+  recetas_resumen
+)
+```
+
+
+```{r}
+#| message: false
+#| warning: false
+library(ggplot2)
+library(dplyr)
+```
+
+### Número de recetas por país o tipo de cocina
+
+```{r}
+recetas_resumen |>
+  arrange(desc(recetas)) |>
+  head(10)
+```
+
+
+```{r}
+ggplot(recetas_resumen,
+  aes(x = reorder(country, -recetas), y = recetas)
+) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(
+    title = "Número de recetas por país o tipo de cocina",
+    x = "País / Tipo de cocina",
+    y = "Número de recetas"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+### Evaluación promedio por país
+
+```{r}
+recetas_resumen |>
+  arrange(desc(evaluacion_promedio)) |>
+  head(10)
+```
+
+```{r}
+ggplot(
+  recetas_resumen,
+  aes(x = reorder(country, -evaluacion_promedio), y = evaluacion_promedio)
+) +
+  geom_bar(stat = "identity", fill = "darkgreen") +
+  labs(
+    title = "Evaluación promedio por país o tipo de cocina",
+    x = "País / Tipo de cocina",
+    y = "Evaluación promedio"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+## Tiempo promedio de preparación por país
+
+
+```{r}
+recetas_resumen |>
+  arrange(desc(tiempo_promedio)) |>
+  head(10)
+```
+
+
+```{r}
+ggplot(
+  recetas_resumen,
+  aes(x = reorder(country, -tiempo_promedio), y = tiempo_promedio)
+) +
+  geom_bar(stat = "identity", fill = "coral") +
+  labs(
+    title = "Tiempo promedio de preparación por país o tipo de cocina",
+    x = "País / Tipo de cocina",
+    y = "Tiempo promedio de preparación (minutos)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
