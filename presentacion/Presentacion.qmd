@@ -1,0 +1,53 @@
+---
+title: Automatización de workflows en R y Python con targets y snakemake
+subtitle: LatinR 2025
+author: Diana García
+date: Dec 2, 2025
+format:
+  revealjs:
+    slide-number: true
+    css: styles.css
+    theme: dracula
+---
+
+## Hola!
+
+Me llamo Diana García.
+
+Soy Bióloga Computational en el Dana Farber Cancer Institute.
+
+## Hoy hablaremos sobre:
+
+- Automatización de workflows
+- Introducción a `targets` en R
+- Introducción a `snakemake` en Python
+
+Todo el material de esta presentación está disponible en: [https://github.com/ddiannae/latinr-targets](https://github.com/ddiannae/latinr-targets){target="_blank"}
+
+## ¿Por qué automatizar workflows?
+
+Por `workflow` o flujo de trabajo nos referimos a la serie de pasos para llevar a cabo un análisis de datos.
+
+- Reproducibilidad
+- Eficiencia
+- Escalabilidad
+- Mantenimiento
+
+## `targets` y `snakemake`
+
+Son herramientas para la automatización de workflows en R y Python, respectivamente.
+
+Ambas permiten definir tareas y gestionar sus dependencias.
+
+Pero cada una tiene sus particularidades:
+
+- En `targets` las tareas están asociadas a funciones en R.
+- En `snakemake` las tareas están asociadas a scripts.
+
+## Mis recomendaciones
+
+- Empieza con proyectos pequeños.
+- Aunque tome más tiempo, incorpora estas herramientas desde el inicio.
+- Tal vez cambie un poco tu forma de trabajar, pero los beneficios valen la pena.
+- Consulta la documentación oficial y ejemplos en línea.
+    - Para `targets` checa [Introduction to targets](https://carpentries-incubator.github.io/targets-workshop/introduction.html){target="_blank"}
