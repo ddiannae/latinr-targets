@@ -1,0 +1,288 @@
+---
+title: "4 - Snakemake"
+format:
+    html:
+        embed-resources: true
+        self-contained: true
+        toc: true
+        toc-location: left
+        toc-title: "Contenido"
+        toc-expand: 3
+engine: knitr
+---
+
+Snakemake, al igual que `targets`, permite crear flujos de trabajo reproducibles y escalables para el análisis de datos.
+
+Sin embargo, Snakemake está basado en Python y el enfoque que utiliza es diferente.
+
+La diferencia principal radica en que las reglas de Snakemake están asociadas a un script o comando externo, mientras que en `targets` las funciones se definen directamente en R.
+
+## Archivo Snakefile
+
+El archivo principal de Snakemake se llama `Snakefile`. En este archivo definimos las reglas que describen cómo transformar los archivos de entrada en archivos de salida.
+
+Las reglas tienen una estructura definida y palabras reservadas para especificar los elementos. Algo importante que debemos cuidar es la identación del código, ya que al igual que en Python, la identación se usa  para definir bloques de código.
+
+Nuestra primera regla realizará la limpieza de datos haciendo uso del script `limpiar_datos.py` guardado en la carpeta `scripts/`.
+
+```{python}
+#| eval: false
+## Snakefile
+rule limpiar_datos:
+    params:
+        "https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2025/2025-09-16/cuisines.csv"
+    output:
+        "data/recetas.csv"
+    script:
+        "scripts/limpiar_datos.py"
+```
+
+Elementos de la regla:
+
+- `rule` es la palabra reservada para definir una nueva regla y `limpiar_datos` es el nombre que le asignamos.
+- `params` define los parámetros de entrada.
+- `output` especifica el archivo de salida.
+- `script` indica el script que se ejecutará para realizar la limpieza de datos.
+
+Para que el script haga uso de los parámetros y la salida definidos en la regla, usamos el objeto `snakemake`
+creado automáticamente por Snakemake.
+
+En nuestro script tenemos:
+```{python}
+#| eval: false
+import pandas as pd
+
+recetas = pd.read_csv(snakemake.params[0])
+...
+recetas.to_csv(snakemake.output[0], index=False)
+```
+
+## Ejecutando el pipeline
+
+Para ejecutar el pipeline, abre una terminal y navega a la carpeta donde se encuentra el archivo `Snakefile`.  Ejecuta el siguiente
+comando:
+
+```bash
+snakemake --cores 1
+```
+
+`--cores` es un parámetro requerido al ejecutar Snakemake, que le indica cuántos núcleos de procesamiento puede utilizar. En este caso, solamente `1`. El número de núcleos es importante en tareas que se ejecutan en paralelo y también para indicarle a Snakemake cuántos recursos puede utilizar ya que reglas independientes pueden ejecutarse de forma simultánea.
+
+::: {.callout-warning}
+## Nota
+Si instalaste Snakemake usando `conda`, asegúrate de activar el ambiente antes de ejecutar el comando.
+:::
+
+El output de snakemake mostrará el progreso de la ejecución y los archivos generados. También nos proporciona una lista
+de las reglas que ejecutará. En este caso es similar a esta:
+
+```
+Building DAG of jobs...
+Job stats:
+job              count
+-------------  -------
+limpiar_datos        1
+total                1
+```
+
+Además, asociada a cada regla, se especifica la razón por la cual se ejecuta. En este caso, la regla `limpiar_datos` se ejecuta porque el archivo de salida `data/recetas.csv` no existe.
+
+Intenta ejecutar el pipeline nuevamente. ¿Qué observas en el output?
+
+## Generando una nueva regla
+
+Observa el script `scripts/graficar.py`, que genera una gráfica de puntos que muestra la relación entre el tiempo total y la calificación promedio de las recetas.
+
+El script utiliza varios elementos del objeto `snakemake`. Usa `snakemake.input[0]`, `snakemake.output[0]` y `snakemake.params.pais`.
+
+Intenta escribir una regla de snakemake que haga uso de este script para graficar las recetas de un país específico. Puedes elegir entre los países de latinoamérica que sabemos están en el dataset: `brazilian`, `cuban`, `argentinian`, `colombian`, `peruvian`, `chilean`.
+
+::: {.callout-tip collapse="true"}
+## Aquí tienes un ejemplo:
+```{python}
+#| eval: false
+## Snakefile
+rule generar_grafica:
+    input:
+        "data/recetas.csv"
+    output:
+        "plots/grafica1.png"
+    params:
+        pais="argentinian"
+    script:
+        "scripts/graficar.py"
+```
+
+:::
+
+Esta nueva regla usará como input el archivo de output de la regla `limpiar_datos`, generando una dependencia automática entre ambas reglas.
+
+
+### Visualizando el pipeline
+
+Snakemake tiene también herramientas para visualizar el flujo de trabajo, al igual que `targets`.
+
+Una vez que hayas definido la regla para graficar, ejecuta el siguiente comando:
+
+```bash
+snakemake -n
+```
+
+El parámetro `-n` le indica a Snakemake que no ejecute las reglas, sino que solamente muestre qué reglas se ejecutarían. Se llama una ejecución *dry-run* y también puede correrse sustituyendo `-n` por `--dry-run`.
+
+Para generar una representación gráfica del pipeline, ejecuta el siguiente comando en la terminal:
+
+```bash
+snakemake --dag | dot -Tpng > pipeline.png
+```
+
+Verás que se genera un archivo `pipeline.png` con la representación gráfica del flujo de trabajo. No es tan bonito como el de `targets`, pero cumple su función.
+
+
+## Wildcards y branching
+
+Aunque la especificación de reglas para nuestro pipeline ya es en sí muy útil, la verdadera potencia de Snakemake radica en su capacidad para manejar múltiples archivos de entrada y salida mediante el uso de *wildcards* y branching.
+
+Los *wildcards* son marcadores con los que definimos reglas que pueden aplicarse a múltiples archivos.
+
+Mediante la identificación de patrones en los nombres de entrada y salida, Snakemake puede generar automáticamente las combinaciones necesarias para procesar diferentes conjuntos de datos.
+
+Por ejemplo, podemos modificar la regla para generar gráficas de la siguiente manera:
+
+```{python}
+#| eval: false
+## Snakefile
+rule generar_grafica:
+    input:
+        "data/recetas.csv"
+    output:
+        "plots/tiempo_calificacion_{pais}.png"
+    params:
+        pais="{pais}"
+    script:
+        "scripts/graficar.py"
+```
+
+Así, el parámetro `{pais}` actúa como un *wildcard* que puede tomar diferentes valores, permitiéndonos generar gráficas para múltiples países sin necesidad de definir reglas separadas para cada uno.
+
+Para que Snakemake sepa exactamente qué archivos generar, necesitamos definir un target final que incluya todas las combinaciones deseadas.
+
+```{python}
+#| eval: false
+## Snakefile
+rule all:
+    input:
+        "plots/grafica_cuban.png",
+        "plots/grafica_brazilian.png",
+        "plots/grafica_argentinian.png",
+        "plots/grafica_peruvian.png"
+```
+
+Tenemos que cuidar que el patrón en la regla `generar_grafica` coincida con los nombres de archivo especificados en la regla `all`.
+
+Por ejemplo, si el output de `generar_grafica` es `plots/dotplot_{pais}.png`, Snakemake no podrá relacionarlo con `plots/grafica_cuban.png` y marcará un error.
+
+Ejecuta primero un *dry-run* para verificar que Snakemake reconoce las reglas correctamente. Identifica cuántas reglas se ejecutarán y luego corre el pipeline completo. Modifica también el número de cores para acelerar la ejecución.
+
+Este tipo de branching es similar al *branching estático* en `targets`, ya que definimos explícitamente los archivos de salida que queremos generar.
+
+## Otras funcionalidades
+
+### Funciones en Snakefile
+
+Snakemake incluye funciones para facilitar la definición de las reglas de nuestro pipeline.
+
+Una de ellas es `expand()`, que sirve para definir múltiples archivos de entrada en una línea de código.
+
+Nuestra regla `all` puede actualizarse de la siguiente manera:
+
+
+```{python}
+#| eval: false
+## Snakefile
+paises_latam = ["cuban", "brazilian", "argentinian", "peruvian",
+    "chilean", "colombian", "tex-mex"]
+
+rule all:
+    input:
+        expand("plots/grafica_{pais}.png", pais=paises_latam)
+```
+
+Aprovechamos que podemos hacer uso de definición de variables, como en cualquier script de python, para especificar los nombres de
+todos los archivos que necesitamos.
+
+Existen otras funciones que puedes usar en tu definición de reglas. Puedes consultarlas en la documentación oficial de Snakemake:
+[Snakefiles and Rules](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html){target="_blank"}
+
+### El archivo config.yaml
+
+Snakemake permite el uso de un archivo de configuración en formato YAML para almacenar parámetros y rutas que pueden ser reutilizados en las reglas del Snakefile.
+
+Por ejemplo, si queremos definir el nombre de la carpeta donde se guardarrán las gráficas, podemos crear un archivo `config.yaml` con el siguiente contenido:
+
+```yaml
+## config.yaml
+output_dir: "figures"
+```
+
+Mientras que en nuestro `Snakefile`, tendríamos que sustituir  `plots` por `config["output_dir"]`.
+
+Además, debemos indicar la ruta del archivo de configuración al inicio del `Snakefile`:
+
+```{python}
+#| eval: false
+## Snakefile
+configfile: "config.yaml"
+```
+
+Realiza las modificaciones y corre nuevamente el pipeline.
+
+### Usando otros scripts
+
+Por ahora, los scripts que hemos utilizado en las reglas están escritos en Python. Sin embargo, Snakemake permite ejecutar scripts escritos en otros lenguajes, como R o bash.
+
+Por ejemplo, si quisiéramos asegurarnos de que el directorio de salida para las gráficas exista antes de generar las gráficas,
+podemos crear una regla que ejecute un script bash para crear el directorio si no existe:
+
+```{python}
+#| eval: false
+## Snakefile
+rule crear_directorio:
+    output:
+        directory(config["output_dir"]),
+        config["output_dir"] + "/done.txt"
+    shell:
+        """mkdir -p {output[0]}
+        touch {output[1]}"""
+```
+
+Y en la regla `generar_grafica`, agregamos como dependencia el archivo `done.txt` generado por la regla `crear_directorio`:
+
+```{python}
+#| eval: false
+## Snakefile
+rule generar_grafica:
+    input:
+        "data/recetas.csv",
+        config["output_dir"] + "/done.txt"
+```
+
+::: {.callout-tip}
+## El archivo /done.txt
+
+Este archivo solamente funciona como marcador para indicar que la carpeta ya fue creada. No contiene información relevante.  Es la forma más sencilla que he
+encontrado para trabajar con dependencias entre directorios.
+:::
+
+Finalmente, si queremos utilizar scripts de R, el procedimiento es similar al de Python. Usamos la palabra reservada `script`, mientras que dentro del script
+tendremos el objeto `snakemake` disponible para acceder a los parámetros, entradas y salidas. Por ejemplo, el primer elemento del output se accede como `snakemake@output[[1]]` y
+el elemento `pais` de los parámetros como `snakemake@params[["pais"]]`.
+
+## Resumen
+
+- Snakemake es una herramienta basada en Python para crear flujos de trabajo reproducibles y escalables.
+- El archivo principal es el `Snakefile`, donde definimos reglas que describen cómo transformar archivos de entrada en archivos de salida.
+- Las reglas tienen una estructura definida y utilizan palabras reservadas para especificar los elementos.
+- Snakemake permite el uso de *wildcards* para manejar branching.
+- Snakemake incluye funciones como `expand()` para facilitar la definición de reglas y permite el uso de archivos de configuración en formato YAML.
+- Podemos ejecutar scripts escritos en diferentes lenguajes, como Python, R o bash
