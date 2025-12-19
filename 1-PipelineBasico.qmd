@@ -89,7 +89,7 @@ limpiar_datos <- function(data) {
     filter(
       !is.na(total_ratings) &
         !is.na(avg_rating) &
-        !is.na(total_time) &
+        !is.na(total_time)
     ) |>
     select(name, country, total_time, avg_rating, total_ratings)
 }

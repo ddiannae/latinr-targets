@@ -7596,7 +7596,7 @@ HTMLWidgets.widget({
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(</span>
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(total_ratings) <span class="sc">&amp;</span></span>
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="sc">!</span><span class="fu">is.na</span>(avg_rating) <span class="sc">&amp;</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="sc">!</span><span class="fu">is.na</span>(total_time) <span class="sc">&amp;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="sc">!</span><span class="fu">is.na</span>(total_time)</span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span></span>
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(name, country, total_time, avg_rating, total_ratings)</span>
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>}</span>
@@ -7682,14 +7682,14 @@ Intenta ejecutar el pipeline nuevamente. ¿Qué observas en la salida?
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(recetas)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 5
-  name                               country total_time avg_rating total_ratings
-  &lt;chr&gt;                              &lt;chr&gt;        &lt;dbl&gt;      &lt;dbl&gt;         &lt;dbl&gt;
-1 Saganaki (Flaming Greek Cheese)    Greek           15        4.8            25
-2 Coney Island Knishes               Jewish         180        4.6            10
-3 Diana&#39;s Hawaiian Bread Rolls       Austra…        180        4.3           126
-4 Chilean Pebre                      Chilean         10        5               1
-5 Tex-Mex Sheet Cake                 Tex-Mex         45        3.8            13
-6 Pan con Tomate (Spanish Tomato Br… Spanish         10        5               2</code></pre>
+  name                            country    total_time avg_rating total_ratings
+  &lt;chr&gt;                           &lt;chr&gt;           &lt;dbl&gt;      &lt;dbl&gt;         &lt;dbl&gt;
+1 Saganaki (Flaming Greek Cheese) Greek              15        4.8            25
+2 Coney Island Knishes            Jewish            180        4.6            10
+3 Diana&#39;s Hawaiian Bread Rolls    Australia…        180        4.3           126
+4 Chilean Pebre                   Chilean            10        5               1
+5 Tex-Mex Sheet Cake              Tex-Mex            45        3.8            13
+6 Newfoundland Jigg&#39;s Dinner      Canadian          675        4.4            40</code></pre>
 </div>
 </div>
 </section>
@@ -7711,8 +7711,8 @@ The following objects are masked from ‘package:base’:
     intersect, setdiff, setequal, union</code></pre>
 </div>
 <div class="cell-output-display">
-<div class="visNetwork html-widget html-fill-item" id="htmlwidget-6db27840a9e1b0164864" style="width:100%;height:464px;"></div>
-<script type="application/json" data-for="htmlwidget-6db27840a9e1b0164864">{"x":{"nodes":{"name":["limpiar_datos","recetas","recetas_raw"],"type":["function","stem","stem"],"description":[null,null,null],"status":["uptodate","uptodate","uptodate"],"seconds":[null,0.004,0.451],"bytes":[null,33736,280568],"branches":[null,null,null],"label":["limpiar_datos","recetas","recetas_raw"],"color":["#354823","#354823","#354823"],"id":["limpiar_datos","recetas","recetas_raw"],"level":[1,2,1],"shape":["triangle","dot","dot"]},"edges":{"from":["limpiar_datos","recetas_raw"],"to":["recetas","recetas"],"color":["#354823","#354823"],"arrows":["to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"levelSeparation":150,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Function","Regular\ntarget"],"color":["#354823","#899DA4","#899DA4"],"shape":["dot","triangle","dot"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
+<div class="visNetwork html-widget html-fill-item" id="htmlwidget-17c9023a431a6b9d3982" style="width:100%;height:464px;"></div>
+<script type="application/json" data-for="htmlwidget-17c9023a431a6b9d3982">{"x":{"nodes":{"name":["limpiar_datos","recetas","recetas_raw"],"type":["function","stem","stem"],"description":[null,null,null],"status":["uptodate","uptodate","uptodate"],"seconds":[null,0.008,1.196],"bytes":[null,39368,280568],"branches":[null,null,null],"label":["limpiar_datos","recetas","recetas_raw"],"color":["#354823","#354823","#354823"],"id":["limpiar_datos","recetas","recetas_raw"],"level":[1,2,1],"shape":["triangle","dot","dot"]},"edges":{"from":["limpiar_datos","recetas_raw"],"to":["recetas","recetas"],"color":["#354823","#354823"],"arrows":["to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"levelSeparation":150,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Function","Regular\ntarget"],"color":["#354823","#899DA4","#899DA4"],"shape":["dot","triangle","dot"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <p>Actualicemos nuestra función <code>limpiar_datos()</code> para incluir un filtro adicional que elimine recetas con tiempos totales mayores a 300 minutos (5 horas) y menores a 5 minutos. Esto facilitará el análisis posterior.</p>
@@ -7770,8 +7770,8 @@ The following objects are masked from ‘package:base’:
     intersect, setdiff, setequal, union
 
 + recetas dispatched
-✔ recetas completed [4ms, 33.74 kB]
-✔ ended pipeline [71ms, 1 completed, 1 skipped]</code></pre>
+✔ recetas completed [5ms, 39.37 kB]
+✔ ended pipeline [119ms, 1 completed, 1 skipped]</code></pre>
 </div>
 </div>
 <p>Con <code>tar_outdated()</code> identificamos targets desactualizados, mientras que <code>tar_destroy()</code> elimina todos los datos generados por el pipeline.</p>
