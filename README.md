@@ -1,12 +1,12 @@
 # Material para el workshop: Automatización de workflows en R y Python con targets y snakemake
 
-Este material fue desarrollado para presentarse en el workshop "Automatización de workflows en R y Python con targets y snakemake", en la conferencia LatinR 2025. Más información sobre el evento y otros tutoriales disponibles en: [Tutoriales LatinR 2025](https://latinr.org/cronograma/tutoriales/){target="_blank"}
+Este material fue desarrollado para presentarse en el workshop "Automatización de workflows en R y Python con targets y snakemake", en la conferencia LatinR 2025. Más información sobre el evento y otros tutoriales disponibles en: [Tutoriales LatinR 2025](https://latinr.org/cronograma/tutoriales/)
 
-La pequeña presentación que acompaña este contenido puedes encontrarla en [Presentación](https://ddiannae.github.io/latinr_targets/Presentacion.html){target="_blank"}
+La pequeña presentación que acompaña este contenido puedes encontrarla en [Presentación](https://ddiannae.github.io/latinr_targets/Presentacion.html)
 
 ## Descripción de las notebooks
 
-Para los ejemplos utilicé el dataset [**Allrecipes**](https://github.com/rfordatascience/tidytuesday/blob/main/data/2025/2025-09-16/readme.md){target="_blank"}, que contiene información sobre recetas de cocina y fue el dataset de TidyTuesday de la semana 37 del 2025.
+Para los ejemplos utilicé el dataset [**Allrecipes**](https://github.com/rfordatascience/tidytuesday/blob/main/data/2025/2025-09-16/readme.md), que contiene información sobre recetas de cocina y fue el dataset de TidyTuesday de la semana 37 del 2025.
 
 El material incluye las siguientes notebooks:
 
